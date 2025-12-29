@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock"
+import { normalizeTags } from "@/lib/constants"
+import { getFaviconUrlWithFallback } from "@/lib/favicon"
 
 interface OpportunityModalProps {
   opportunity: Opportunity
@@ -30,9 +32,9 @@ export function OpportunityModal({
     return () => window.removeEventListener("keydown", handleEscape)
   }, [isOpen, onClose])
 
-  const daysUntilDeadline = Math.ceil(
-    (opportunity.deadline - Date.now()) / (1000 * 60 * 60 * 24)
-  )
+  const daysUntilDeadline = opportunity.deadline 
+    ? Math.ceil((opportunity.deadline - Date.now()) / (1000 * 60 * 60 * 24))
+    : null
 
   return (
     <AnimatePresence initial={false}>
@@ -63,11 +65,16 @@ export function OpportunityModal({
                   {opportunity.logoUrl && (
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
                       <Image
-                        src={opportunity.logoUrl || "/placeholder.svg"}
+                        src={opportunity.logoUrl}
                         alt={opportunity.provider}
                         width={48}
                         height={48}
                         className="w-full h-full object-cover"
+                        onError={async (e) => {
+                          // Fallback to generated placeholder favicon
+                          const fallback = await getFaviconUrlWithFallback(opportunity.applyUrl)
+                          e.currentTarget.src = fallback
+                        }}
                       />
                     </div>
                   )}
@@ -105,19 +112,27 @@ export function OpportunityModal({
                     <p className="text-xs text-muted-foreground font-semibold mb-1">
                       Deadline
                     </p>
-                    <p className="text-sm font-medium">
-                      {new Date(opportunity.deadline).toLocaleDateString(
-                        "en-US",
-                        { month: "long", day: "numeric", year: "numeric" }
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {daysUntilDeadline > 0
-                        ? `${daysUntilDeadline} day${
-                            daysUntilDeadline !== 1 ? "s" : ""
-                          } remaining`
-                        : "Deadline passed"}
-                    </p>
+                    {opportunity.deadline ? (
+                      <>
+                        <p className="text-sm font-medium">
+                          {new Date(opportunity.deadline).toLocaleDateString(
+                            "en-US",
+                            { month: "long", day: "numeric", year: "numeric" }
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {daysUntilDeadline && daysUntilDeadline > 0
+                            ? `${daysUntilDeadline} day${
+                                daysUntilDeadline !== 1 ? "s" : ""
+                              } remaining`
+                            : "Deadline passed"}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Not sure
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-semibold mb-1">
@@ -137,7 +152,7 @@ export function OpportunityModal({
                     Categories
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {opportunity.categoryTags.map((tag) => (
+                    {normalizeTags(opportunity.categoryTags || []).map((tag) => (
                       <Badge key={tag} variant="secondary">
                         {tag}
                       </Badge>

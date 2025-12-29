@@ -8,6 +8,7 @@ import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { X, CheckCircle2 } from "lucide-react"
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock"
 
@@ -159,23 +160,25 @@ export function SubmitOpportunityModal({ open, onOpenChange }: SubmitOpportunity
                         <label className="text-sm font-medium text-foreground mb-2 block">
                           Opportunity Type <span className="text-destructive">*</span>
                         </label>
-                        <select
-                          name="opportunityType"
-                          value={formData.opportunityType}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 bg-muted/50 border border-muted rounded-lg text-sm focus:outline-none focus:border-foreground focus:scale-[1.01] transition-all cursor-pointer disabled:opacity-50"
+                        <Select
+                          value={formData.opportunityType || undefined}
+                          onValueChange={(value) => setFormData({ ...formData, opportunityType: value })}
                           disabled={isSubmitting}
                         >
-                          <option value="">Select type</option>
-                          <option value="bootcamp">Bootcamp</option>
-                          <option value="grant">Grant</option>
-                          <option value="fellowship">Fellowship</option>
-                          <option value="funding">Funding</option>
-                          <option value="credits">Credits</option>
-                          <option value="program">Program</option>
-                          <option value="scholarship">Scholarship</option>
-                          <option value="other">Other</option>
-                        </select>
+                          <SelectTrigger className="w-full bg-muted/50 border-muted hover:border-foreground/50 disabled:opacity-50">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bootcamp">Bootcamp</SelectItem>
+                            <SelectItem value="grant">Grant</SelectItem>
+                            <SelectItem value="fellowship">Fellowship</SelectItem>
+                            <SelectItem value="funding">Funding</SelectItem>
+                            <SelectItem value="credits">Credits</SelectItem>
+                            <SelectItem value="program">Program</SelectItem>
+                            <SelectItem value="scholarship">Scholarship</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div>

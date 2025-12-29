@@ -9,7 +9,10 @@ import { useAuth } from "./auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { getFaviconUrl, getFaviconUrlSync } from "@/lib/favicon"
+import { MultiSelect } from "@/components/ui/multi-select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { getFaviconUrlWithFallback, getFaviconUrlSync } from "@/lib/favicon"
+import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
 import { AlertCircle, Loader2 } from "lucide-react"
 
 interface CreateOpportunityFormProps {
@@ -31,8 +34,9 @@ export function CreateOpportunityForm({ onSuccess }: CreateOpportunityFormProps)
     description_full: "",
     applyUrl: "",
     deadline: "",
+    deadlineNotSure: false,
     status: "active" as const,
-    categoryTags: "",
+    categoryTags: [] as string[],
     applicableGroups: "",
     regions: "",
     fundingTypes: "",
@@ -49,11 +53,9 @@ export function CreateOpportunityForm({ onSuccess }: CreateOpportunityFormProps)
           const syncUrl = getFaviconUrlSync(formData.applyUrl)
           if (syncUrl) setLogoUrl(syncUrl)
           
-          // Then fetch the actual favicon (may be the same, but ensures it exists)
-          const faviconUrl = await getFaviconUrl(formData.applyUrl)
-          if (faviconUrl) {
-            setLogoUrl(faviconUrl)
-          }
+          // Then fetch the actual favicon with fallback
+          const faviconUrl = await getFaviconUrlWithFallback(formData.applyUrl)
+          setLogoUrl(faviconUrl)
         } catch (err) {
           console.error("Failed to fetch favicon:", err)
         } finally {
@@ -75,7 +77,7 @@ export function CreateOpportunityForm({ onSuccess }: CreateOpportunityFormProps)
     setIsSubmitting(true)
 
     try {
-      if (!formData.title || !formData.provider || !formData.applyUrl || !formData.deadline) {
+      if (!formData.title || !formData.provider || !formData.applyUrl || (!formData.deadline && !formData.deadlineNotSure)) {
         throw new Error("Please fill in all required fields")
       }
 
@@ -86,16 +88,16 @@ export function CreateOpportunityForm({ onSuccess }: CreateOpportunityFormProps)
       await createMutation({
         title: formData.title,
         provider: formData.provider,
-        logoUrl: logoUrl || getFaviconUrlSync(formData.applyUrl) || `https://www.google.com/s2/favicons?domain=example.com&sz=64`,
+        logoUrl: logoUrl || getFaviconUrlSync(formData.applyUrl),
         description: formData.description,
         description_full: formData.description_full,
         applyUrl: formData.applyUrl,
-        deadline: new Date(formData.deadline).getTime(),
+        deadline: formData.deadlineNotSure ? undefined : new Date(formData.deadline).getTime(),
         status: formData.status,
-        categoryTags: formData.categoryTags.split(",").map((t) => t.trim()),
-        applicableGroups: formData.applicableGroups.split(",").map((t) => t.trim()),
-        regions: formData.regions.split(",").map((t) => t.trim()),
-        fundingTypes: formData.fundingTypes.split(",").map((t) => t.trim()),
+        categoryTags: normalizeTags(formData.categoryTags),
+        applicableGroups: formData.applicableGroups.split(",").map((t) => t.trim()).filter(Boolean),
+        regions: formData.regions.split(",").map((t) => t.trim()).filter(Boolean),
+        fundingTypes: formData.fundingTypes.split(",").map((t) => t.trim()).filter(Boolean),
         eligibility: formData.eligibility,
         createdBy: user.username,
       })
@@ -215,23 +217,45 @@ export function CreateOpportunityForm({ onSuccess }: CreateOpportunityFormProps)
 
         <div>
           <label className="text-sm font-medium text-foreground">Deadline *</label>
-          <Input
-            required
-            type="date"
-            value={formData.deadline}
-            onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-            className="mt-2"
-          />
+          <div className="mt-2 space-y-2">
+            <Input
+              required={!formData.deadlineNotSure}
+              disabled={formData.deadlineNotSure}
+              type="date"
+              value={formData.deadline}
+              onChange={(e) => setFormData({ ...formData, deadline: e.target.value, deadlineNotSure: false })}
+            />
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="deadline-not-sure"
+                checked={formData.deadlineNotSure}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, deadlineNotSure: checked === true, deadline: checked ? "" : formData.deadline })
+                }
+              />
+              <label
+                htmlFor="deadline-not-sure"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Not sure
+              </label>
+            </div>
+          </div>
         </div>
 
         <div className="col-span-2">
-          <label className="text-sm font-medium text-foreground">Category Tags</label>
-          <Input
-            value={formData.categoryTags}
-            onChange={(e) => setFormData({ ...formData, categoryTags: e.target.value })}
-            placeholder="Bootcamp, Grant, Education (comma-separated)"
-            className="mt-2"
-          />
+          <label className="text-sm font-medium text-foreground">Category Tags *</label>
+          <div className="mt-2">
+            <MultiSelect
+              options={PREDEFINED_TAGS}
+              selected={formData.categoryTags}
+              onChange={(selected) => setFormData({ ...formData, categoryTags: selected })}
+              placeholder="Select category tags..."
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Select one or more categories from the predefined list
+          </p>
         </div>
 
         <div className="col-span-2">

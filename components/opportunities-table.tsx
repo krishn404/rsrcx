@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import Image from "next/image"
@@ -9,6 +8,8 @@ import type { Opportunity } from "@/types/opportunity"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
+import { getFaviconUrlWithFallback } from "@/lib/favicon"
 
 interface OpportunitiesTableProps {
   onSelectOpportunity: (opportunity: Opportunity) => void
@@ -32,16 +33,23 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
         opp.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         opp.provider.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesCategory = !selectedCategory || opp.categoryTags.includes(selectedCategory)
+      const normalizedTags = normalizeTags(opp.categoryTags || [])
+      const matchesCategory = !selectedCategory || normalizedTags.includes(selectedCategory)
 
       return matchesSearch && matchesCategory
     })
   }, [opportunities, searchQuery, selectedCategory])
 
-  // Get unique categories for filter
+  // Get unique categories for filter - only from predefined tags
   const allCategories = useMemo(() => {
     if (!opportunities) return []
-    return Array.from(new Set(opportunities.flatMap((opp) => opp.categoryTags))).sort()
+    const usedTags = new Set<string>()
+    opportunities.forEach((opp) => {
+      const normalized = normalizeTags(opp.categoryTags || [])
+      normalized.forEach((tag) => usedTags.add(tag))
+    })
+    // Return only predefined tags that are actually used, sorted
+    return PREDEFINED_TAGS.filter((tag) => usedTags.has(tag))
   }, [opportunities])
 
   return (
@@ -123,13 +131,15 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {opportunity.logoUrl ? (
                           <Image
-                            src={opportunity.logoUrl || "/placeholder.svg"}
+                            src={opportunity.logoUrl}
                             alt={opportunity.provider}
                             width={48}
                             height={48}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg?height=48&width=48"
+                            onError={async (e) => {
+                              // Fallback to generated placeholder favicon
+                              const fallback = await getFaviconUrlWithFallback(opportunity.applyUrl)
+                              e.currentTarget.src = fallback
                             }}
                           />
                         ) : (
@@ -145,24 +155,26 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                     </td>
                     <td className="px-3 sm:px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {opportunity.categoryTags.slice(0, 2).map((tag) => (
+                        {normalizeTags(opportunity.categoryTags || []).slice(0, 2).map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
-                        {opportunity.categoryTags.length > 2 && (
+                        {normalizeTags(opportunity.categoryTags || []).length > 2 && (
                           <Badge variant="outline" className="text-xs">
-                            +{opportunity.categoryTags.length - 2}
+                            +{normalizeTags(opportunity.categoryTags || []).length - 2}
                           </Badge>
                         )}
                       </div>
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(opportunity.deadline).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {opportunity.deadline
+                        ? new Date(opportunity.deadline).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "Not sure"}
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right">
                       <Button
@@ -200,13 +212,15 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                   <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {opportunity.logoUrl ? (
                       <Image
-                        src={opportunity.logoUrl || "/placeholder.svg"}
+                        src={opportunity.logoUrl}
                         alt={opportunity.provider}
                         width={48}
                         height={48}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg?height=48&width=48"
+                        onError={async (e) => {
+                          // Fallback to generated placeholder favicon
+                          const fallback = await getFaviconUrlWithFallback(opportunity.applyUrl)
+                          e.currentTarget.src = fallback
                         }}
                       />
                     ) : (
@@ -217,24 +231,26 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                     <h3 className="font-semibold text-foreground text-sm mb-1 line-clamp-2">{opportunity.title}</h3>
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{opportunity.description}</p>
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {opportunity.categoryTags.slice(0, 3).map((tag) => (
+                      {normalizeTags(opportunity.categoryTags || []).slice(0, 3).map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
-                      {opportunity.categoryTags.length > 3 && (
+                      {normalizeTags(opportunity.categoryTags || []).length > 3 && (
                         <Badge variant="outline" className="text-xs">
-                          +{opportunity.categoryTags.length - 3}
+                          +{normalizeTags(opportunity.categoryTags || []).length - 3}
                         </Badge>
                       )}
                     </div>
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-xs text-muted-foreground">
-                        {new Date(opportunity.deadline).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {opportunity.deadline
+                          ? new Date(opportunity.deadline).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "Not sure"}
                       </span>
                       <Button
                         size="sm"

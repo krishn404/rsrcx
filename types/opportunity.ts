@@ -8,7 +8,7 @@ export interface Opportunity {
   categoryTags: string[]
   applicableGroups: string[]
   applyUrl: string
-  deadline: number // Unix timestamp
+  deadline?: number // Unix timestamp
   status: "active" | "inactive" | "archived"
   regions?: string[]
   fundingTypes?: string[]

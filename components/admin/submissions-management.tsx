@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ExternalLink, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react"
 import { Id } from "@/convex/_generated/dataModel"
 import { useAuth } from "./auth-provider"
+import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
 
 interface SubmissionsManagementProps {
   onRefresh?: () => void
@@ -55,19 +56,19 @@ export function SubmissionsManagement({ onRefresh }: SubmissionsManagementProps)
     }
 
     try {
-      // Create opportunity from submission
+      // Map submission type to predefined tags
       const opportunityTypeToCategory = (type: string): string[] => {
         const mapping: Record<string, string[]> = {
           bootcamp: ["Bootcamp"],
-          grant: ["Grant", "Funding"],
-          fellowship: ["Fellowship"],
-          funding: ["Funding"],
-          credits: ["Credits"],
-          program: ["Program"],
-          scholarship: ["Scholarship"],
+          grant: ["Grant"],
+          "student benefit": ["Student Benefit"],
+          ai: ["AI"],
+          accelerator: ["Accelerator"],
           other: ["Other"],
         }
-        return mapping[type.toLowerCase()] || [type]
+        const mapped = mapping[type.toLowerCase()] || ["Other"]
+        // Ensure all tags are from predefined list
+        return normalizeTags(mapped)
       }
 
       await createOpportunityMutation({
@@ -360,7 +361,7 @@ export function SubmissionsManagement({ onRefresh }: SubmissionsManagementProps)
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleApprove(submission)}
-                                  className="text-xs gap-1 text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 cursor-pointer"
+                                  className="text-xs gap-1 text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-200 hover:bg-green-100 dark:hover:bg-green-900/40 cursor-pointer"
                                   title="Approve & Create Opportunity"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -371,7 +372,7 @@ export function SubmissionsManagement({ onRefresh }: SubmissionsManagementProps)
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleStatusUpdate(submission._id, "rejected")}
-                                  className="text-xs gap-1 text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 cursor-pointer"
+                                  className="text-xs gap-1 text-red-700 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 hover:bg-red-100 dark:hover:bg-red-900/40 cursor-pointer"
                                   title="Reject"
                                 >
                                   <XCircle className="w-3.5 h-3.5" />

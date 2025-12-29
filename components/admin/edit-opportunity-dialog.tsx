@@ -7,7 +7,11 @@ import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { getFaviconUrl, getFaviconUrlSync } from "@/lib/favicon"
+import { MultiSelect } from "@/components/ui/multi-select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { getFaviconUrlWithFallback, getFaviconUrlSync } from "@/lib/favicon"
+import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
 import { AlertCircle, Loader2 } from "lucide-react"
 
 interface EditOpportunityDialogProps {
@@ -29,9 +33,10 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
     description: opportunity.description,
     description_full: opportunity.description_full,
     applyUrl: opportunity.applyUrl,
-    deadline: new Date(opportunity.deadline).toISOString().split("T")[0],
+    deadline: opportunity.deadline ? new Date(opportunity.deadline).toISOString().split("T")[0] : "",
+    deadlineNotSure: !opportunity.deadline,
     status: opportunity.status,
-    categoryTags: opportunity.categoryTags?.join(", ") || "",
+    categoryTags: normalizeTags(opportunity.categoryTags || []),
     applicableGroups: opportunity.applicableGroups?.join(", ") || "",
     regions: opportunity.regions?.join(", ") || "",
     fundingTypes: opportunity.fundingTypes?.join(", ") || "",
@@ -48,11 +53,9 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
           const syncUrl = getFaviconUrlSync(formData.applyUrl)
           if (syncUrl) setLogoUrl(syncUrl)
           
-          // Then fetch the actual favicon
-          const faviconUrl = await getFaviconUrl(formData.applyUrl)
-          if (faviconUrl) {
-            setLogoUrl(faviconUrl)
-          }
+          // Then fetch the actual favicon with fallback
+          const faviconUrl = await getFaviconUrlWithFallback(formData.applyUrl)
+          setLogoUrl(faviconUrl)
         } catch (err) {
           console.error("Failed to fetch favicon:", err)
         } finally {
@@ -80,9 +83,9 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
         description: formData.description,
         description_full: formData.description_full,
         applyUrl: formData.applyUrl,
-        deadline: new Date(formData.deadline).getTime(),
+        deadline: formData.deadlineNotSure ? undefined : new Date(formData.deadline).getTime(),
         status: formData.status as "active" | "inactive" | "archived",
-        categoryTags: formData.categoryTags.split(",").map((t) => t.trim()),
+        categoryTags: normalizeTags(formData.categoryTags),
         applicableGroups: formData.applicableGroups.split(",").map((t) => t.trim()),
         regions: formData.regions.split(",").map((t) => t.trim()),
         fundingTypes: formData.fundingTypes.split(",").map((t) => t.trim()),
@@ -200,23 +203,46 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
 
             <div>
               <label className="text-sm font-medium text-foreground">Deadline *</label>
-              <input
-                required
-                type="date"
-                value={formData.deadline}
-                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                className="mt-2 w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
+              <div className="mt-2 space-y-2">
+                <input
+                  required={!formData.deadlineNotSure}
+                  disabled={formData.deadlineNotSure}
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value, deadlineNotSure: false })}
+                  className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="edit-deadline-not-sure"
+                    checked={formData.deadlineNotSure}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, deadlineNotSure: checked === true, deadline: checked ? "" : formData.deadline })
+                    }
+                  />
+                  <label
+                    htmlFor="edit-deadline-not-sure"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Not sure
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="col-span-2">
-              <label className="text-sm font-medium text-foreground">Category Tags</label>
-              <input
-                value={formData.categoryTags}
-                onChange={(e) => setFormData({ ...formData, categoryTags: e.target.value })}
-                placeholder="Bootcamp, Grant, Education"
-                className="mt-2 w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
+              <label className="text-sm font-medium text-foreground">Category Tags *</label>
+              <div className="mt-2">
+                <MultiSelect
+                  options={PREDEFINED_TAGS}
+                  selected={formData.categoryTags}
+                  onChange={(selected) => setFormData({ ...formData, categoryTags: selected })}
+                  placeholder="Select category tags..."
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select one or more categories from the predefined list
+              </p>
             </div>
 
             <div className="col-span-2">
@@ -262,15 +288,19 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
 
             <div>
               <label className="text-sm font-medium text-foreground">Status</label>
-              <select
+              <Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="mt-2 w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                onValueChange={(value) => setFormData({ ...formData, status: value as "active" | "inactive" | "archived" })}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="archived">Archived</option>
-              </select>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

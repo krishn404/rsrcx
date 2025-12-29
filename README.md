@@ -25,7 +25,7 @@ Discover active, time‑sensitive opportunities for tech students and developers
 
 ```bash
 # Clone the repository
-git clone https://github.com/krishn404/rsrcx.git
+git clone https://github.com/krishn404/srcx.git
 cd rsrcx
 
 # Install dependencies

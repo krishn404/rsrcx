@@ -11,7 +11,7 @@ export default defineSchema({
     categoryTags: v.array(v.string()),
     applicableGroups: v.array(v.string()),
     applyUrl: v.string(),
-    deadline: v.number(), // Unix timestamp
+    deadline: v.optional(v.number()), // Unix timestamp
     status: v.union(v.literal("active"), v.literal("inactive"), v.literal("archived")),
     regions: v.optional(v.array(v.string())),
     fundingTypes: v.optional(v.array(v.string())),

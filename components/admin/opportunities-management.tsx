@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { EditOpportunityDialog } from "./edit-opportunity-dialog"
 import { DeleteConfirmDialog } from "./delete-confirm-dialog"
 import { Pencil, Copy, Archive, MoreVertical, AlertCircle, ArchiveRestore } from "lucide-react"
+import { getFaviconUrlWithFallback } from "@/lib/favicon"
 
 interface OpportunitiesManagementProps {
   onRefresh: () => void
@@ -214,13 +215,15 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
                         {opportunity.logoUrl ? (
                           <Image
-                            src={opportunity.logoUrl || "/placeholder.svg"}
+                            src={opportunity.logoUrl}
                             alt={opportunity.provider}
                             width={40}
                             height={40}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg?height=40&width=40"
+                            onError={async (e) => {
+                              // Fallback to generated placeholder favicon
+                              const fallback = await getFaviconUrlWithFallback(opportunity.applyUrl)
+                              e.currentTarget.src = fallback
                             }}
                           />
                         ) : (
@@ -277,7 +280,7 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
                               variant="ghost"
                               size="sm"
                               onClick={() => handleUnarchive(opportunity)}
-                              className="text-xs gap-1 cursor-pointer text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
+                              className="text-xs gap-1 cursor-pointer text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-200 hover:bg-green-100 dark:hover:bg-green-900/40"
                               title="Unarchive"
                             >
                               <ArchiveRestore className="w-3.5 h-3.5" />

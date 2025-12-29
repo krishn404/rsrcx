@@ -1,6 +1,15 @@
 import { mutation, query } from "./_generated/server"
 import { v } from "convex/values"
 
+// Predefined tags - must match client-side constants
+const PREDEFINED_TAGS = ["Bootcamp", "Grant", "Student Benefit", "AI", "Accelerator", "Other"] as const
+
+// Normalize tags - filter out invalid tags and ensure uniqueness
+function normalizeTags(tags: string[]): string[] {
+  const validTags = tags.filter((tag) => PREDEFINED_TAGS.includes(tag as any))
+  return Array.from(new Set(validTags))
+}
+
 // Query all opportunities
 export const list = query({
   args: {
@@ -38,8 +47,13 @@ export const list = query({
       )
     }
 
-    // Sort by deadline (nearest first)
-    opportunities.sort((a, b) => a.deadline - b.deadline)
+    // Sort by deadline (nearest first), null deadlines go to the end
+    opportunities.sort((a, b) => {
+      if (!a.deadline && !b.deadline) return 0
+      if (!a.deadline) return 1 // a goes to end
+      if (!b.deadline) return -1 // b goes to end
+      return a.deadline - b.deadline
+    })
 
     return opportunities.map((opp) => ({
       _id: opp._id,
@@ -106,7 +120,7 @@ export const create = mutation({
     categoryTags: v.array(v.string()),
     applicableGroups: v.array(v.string()),
     applyUrl: v.string(),
-    deadline: v.number(),
+    deadline: v.optional(v.number()),
     status: v.union(v.literal("active"), v.literal("inactive"), v.literal("archived")),
     regions: v.array(v.string()),
     fundingTypes: v.array(v.string()),
@@ -115,9 +129,11 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now()
+    // Normalize category tags to only include predefined tags
+    const normalizedTags = normalizeTags(args.categoryTags || [])
     const id = await ctx.db.insert("opportunities", {
       ...args,
-      deadline: args.deadline,
+      categoryTags: normalizedTags,
       createdAt: now,
       updatedAt: now,
       createdBy: args.createdBy,
@@ -150,10 +166,13 @@ export const update = mutation({
     const existing = await ctx.db.get(id)
     if (!existing) throw new Error("Opportunity not found")
 
-    await ctx.db.patch(id, {
-      ...updates,
-      updatedAt: Date.now(),
-    })
+    // Normalize category tags if provided
+    const patchData: any = { ...updates, updatedAt: Date.now() }
+    if (updates.categoryTags) {
+      patchData.categoryTags = normalizeTags(updates.categoryTags)
+    }
+
+    await ctx.db.patch(id, patchData)
     return id
   },
 })
