@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { OpportunitiesTable } from "@/components/opportunities-table"
-import { OpportunityModal } from "@/components/opportunity-modal"
-import { SubmitOpportunityModal } from "@/components/submit-opportunity-modal"
+import { OpportunitiesTable } from "@/components/list"
+import { OpportunityModal } from "@/components/modal"
+import { SubmitOpportunityModal } from "@/components/submit"
 import type { Opportunity } from "@/types/opportunity"
 
 export default function HomePage() {

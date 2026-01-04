@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
 import { getFaviconUrlWithFallback } from "@/lib/favicon"
+import { FileText, Search } from "lucide-react"
 
 interface OpportunitiesTableProps {
   onSelectOpportunity: (opportunity: Opportunity) => void
@@ -88,10 +89,12 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
       </div>
 
       {/* Results Count */}
-      <div className="text-xs sm:text-sm text-muted-foreground">
-        {filteredOpportunities.length}{" "}
-        {filteredOpportunities.length > 1 ? "opportunities" : "opportunity"}
-      </div>
+      {opportunities !== undefined && opportunities.length > 0 && (
+        <div className="text-xs sm:text-sm text-muted-foreground">
+          {filteredOpportunities.length}{" "}
+          {filteredOpportunities.length === 1 ? "opportunity" : "opportunities"}
+        </div>
+      )}
 
       {/* Table - Responsive */}
       <div className="border border-border rounded-lg overflow-hidden">
@@ -114,10 +117,40 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                     Loading opportunities...
                   </td>
                 </tr>
+              ) : opportunities.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 sm:py-16">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4 max-w-md mx-auto">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted flex items-center justify-center">
+                        <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg sm:text-xl font-semibold text-foreground">
+                          No opportunities yet
+                        </h3>
+                        <p className="text-sm sm:text-base text-muted-foreground max-w-sm">
+                          We're curating the best grants, bootcamps, and programs for students and developers. Check back soon for exciting opportunities!
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               ) : filteredOpportunities.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    No opportunities match your search
+                  <td colSpan={5} className="px-4 py-12 sm:py-16">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4 max-w-md mx-auto">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted flex items-center justify-center">
+                        <Search className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg sm:text-xl font-semibold text-foreground">
+                          No opportunities match your search
+                        </h3>
+                        <p className="text-sm sm:text-base text-muted-foreground">
+                          Try adjusting your filters or search terms to find what you're looking for.
+                        </p>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -199,8 +232,34 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
         <div className="md:hidden space-y-3 p-3">
           {opportunities === undefined ? (
             <div className="text-center py-8 text-muted-foreground text-sm">Loading opportunities...</div>
+          ) : opportunities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-12 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                <FileText className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-2 px-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  No opportunities yet
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  We're curating the best grants, bootcamps, and programs for students and developers. Check back soon for exciting opportunities!
+                </p>
+              </div>
+            </div>
           ) : filteredOpportunities.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">No opportunities match your search</div>
+            <div className="flex flex-col items-center justify-center text-center py-12 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                <Search className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-2 px-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  No opportunities match your search
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your filters or search terms to find what you're looking for.
+                </p>
+              </div>
+            </div>
           ) : (
             filteredOpportunities.map((opportunity) => (
               <div

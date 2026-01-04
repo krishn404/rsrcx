@@ -7,12 +7,12 @@ import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { MultiSelect } from "@/components/ui/multi-select"
+import { MultiSelect } from "@/components/ui/multiselect"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { getFaviconUrlWithFallback, getFaviconUrlSync } from "@/lib/favicon"
 import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Globe } from "lucide-react"
 
 interface EditOpportunityDialogProps {
   opportunity: any
@@ -26,6 +26,7 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
   const [error, setError] = useState<string | null>(null)
   const [logoUrl, setLogoUrl] = useState(opportunity.logoUrl)
   const [isFetchingLogo, setIsFetchingLogo] = useState(false)
+  const [logoLoadError, setLogoLoadError] = useState(false)
 
   const [formData, setFormData] = useState({
     title: opportunity.title,
@@ -48,6 +49,7 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
     const fetchFavicon = async () => {
       if (formData.applyUrl && formData.applyUrl.startsWith("http") && formData.applyUrl !== opportunity.applyUrl) {
         setIsFetchingLogo(true)
+        setLogoLoadError(false)
         try {
           // Set immediate sync version for instant feedback
           const syncUrl = getFaviconUrlSync(formData.applyUrl)
@@ -56,8 +58,10 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
           // Then fetch the actual favicon with fallback
           const faviconUrl = await getFaviconUrlWithFallback(formData.applyUrl)
           setLogoUrl(faviconUrl)
+          setLogoLoadError(false)
         } catch (err) {
           console.error("Failed to fetch favicon:", err)
+          setLogoLoadError(true)
         } finally {
           setIsFetchingLogo(false)
         }
@@ -171,20 +175,30 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
             <div className="col-span-2">
               <label className="text-sm font-medium text-foreground">Logo (Auto-fetched from URL)</label>
               <div className="mt-2 space-y-2">
-                {logoUrl && (
+                {(logoUrl || logoLoadError) && (
                   <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/30">
-                    <img 
-                      src={logoUrl} 
-                      alt="Favicon" 
-                      className="w-8 h-8 rounded"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none"
-                      }}
-                    />
+                    {logoLoadError || !logoUrl ? (
+                      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <img 
+                        src={logoUrl} 
+                        alt="Favicon" 
+                        className="w-8 h-8 rounded flex-shrink-0"
+                        onError={() => {
+                          setLogoLoadError(true)
+                        }}
+                      />
+                    )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground truncate">{logoUrl}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {logoLoadError ? "Placeholder icon (favicon unavailable)" : logoUrl}
+                      </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Automatically fetched from the application URL
+                        {logoLoadError 
+                          ? "Using placeholder icon - favicon could not be loaded"
+                          : "Automatically fetched from the application URL"}
                       </p>
                     </div>
                     {isFetchingLogo && (
@@ -192,7 +206,7 @@ export function EditOpportunityDialog({ opportunity, onClose, onSuccess }: EditO
                     )}
                   </div>
                 )}
-                {!logoUrl && formData.applyUrl && (
+                {!logoUrl && !logoLoadError && formData.applyUrl && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Fetching favicon...</span>

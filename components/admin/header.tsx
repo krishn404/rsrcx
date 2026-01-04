@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { AdminLogoutButton } from "./admin-logout-button"
+import { AdminLogoutButton } from "./logout"
 import { Plus } from "lucide-react"
 
 interface AdminHeaderProps {

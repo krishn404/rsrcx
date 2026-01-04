@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ExternalLink, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react"
 import { Id } from "@/convex/_generated/dataModel"
-import { useAuth } from "./auth-provider"
+import { useAuth } from "./auth"
 import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
 
 interface SubmissionsManagementProps {

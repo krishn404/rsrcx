@@ -2,7 +2,7 @@
 
 import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { useAuth } from "./auth-provider"
+import { useAuth } from "./auth"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Trash2, Archive } from "lucide-react"

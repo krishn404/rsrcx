@@ -3,10 +3,10 @@
 import { useState } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { AdminHeader } from "@/components/admin/admin-header"
-import { OpportunitiesManagement } from "@/components/admin/opportunities-management"
-import { SubmissionsManagement } from "@/components/admin/submissions-management"
-import { AddOpportunityDialog } from "@/components/admin/add-opportunity-dialog"
+import { AdminHeader } from "@/components/admin/header"
+import { OpportunitiesManagement } from "@/components/admin/list"
+import { SubmissionsManagement } from "@/components/admin/submissions"
+import { AddOpportunityDialog } from "@/components/admin/add-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AdminPage() {

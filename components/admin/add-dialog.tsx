@@ -1,7 +1,7 @@
 "use client"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CreateOpportunityForm } from "./create-opportunity-form"
+import { CreateOpportunityForm } from "./create-form"
 
 interface AddOpportunityDialogProps {
   isOpen: boolean

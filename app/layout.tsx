@@ -1,8 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
-import { ConvexProvider } from "@/components/convex-provider"
-import { AuthProvider } from "@/components/admin/auth-provider"
+import { ConvexProvider } from "@/components/convex"
+import { AuthProvider } from "@/components/admin/auth"
 import "./globals.css"
 import { Instrument_Serif, Share_Tech_Mono } from "next/font/google"
 

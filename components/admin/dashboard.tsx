@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { AdminHeader } from "./admin-header"
-import { OpportunitiesTable } from "./opportunities-table"
-import { CreateOpportunityForm } from "./create-opportunity-form"
+import { AdminHeader } from "./header"
+import { OpportunitiesTable } from "./table"
+import { CreateOpportunityForm } from "./create-form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export function AdminDashboard() {

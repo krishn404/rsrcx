@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Pencil, Copy, Archive, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { EditOpportunityDialog } from "./edit-opportunity-dialog"
+import { EditOpportunityDialog } from "./edit-dialog"
 
 interface OpportunitiesTableProps {
   opportunities: any[]

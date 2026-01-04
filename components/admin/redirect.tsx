@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "./auth-provider"
+import { useAuth } from "./auth"
 import { Spinner } from "@/components/ui/spinner"
 
 interface AdminRedirectProps {
