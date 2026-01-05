@@ -64,6 +64,8 @@ export function SubmissionsManagement({ onRefresh }: SubmissionsManagementProps)
           "student benefit": ["Student Benefit"],
           ai: ["AI"],
           accelerator: ["Accelerator"],
+          fellowship: ["Fellowship"],
+          mentorship: ["Mentorship"],
           other: ["Other"],
         }
         const mapped = mapping[type.toLowerCase()] || ["Other"]

@@ -172,6 +172,7 @@ export function SubmitOpportunityModal({ open, onOpenChange }: SubmitOpportunity
                             <SelectItem value="bootcamp">Bootcamp</SelectItem>
                             <SelectItem value="grant">Grant</SelectItem>
                             <SelectItem value="fellowship">Fellowship</SelectItem>
+                            <SelectItem value="mentorship">Mentorship</SelectItem>
                             <SelectItem value="funding">Funding</SelectItem>
                             <SelectItem value="credits">Credits</SelectItem>
                             <SelectItem value="program">Program</SelectItem>

@@ -9,6 +9,8 @@ export const PREDEFINED_TAGS = [
   "AI",
   "Accelerator",
   "Startup Benefits",
+  "Fellowship",
+  "Mentorship",
   "Other",
 ] as const
 

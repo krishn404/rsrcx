@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server"
 import { v } from "convex/values"
 
 // Predefined tags - must match client-side constants
-const PREDEFINED_TAGS = ["Bootcamp", "Grant", "Student Benefit", "AI", "Accelerator", "Startup Benefits", "Other"] as const
+const PREDEFINED_TAGS = ["Bootcamp", "Grant", "Student Benefit", "AI", "Accelerator", "Startup Benefits", "Fellowship", "Mentorship", "Other"] as const
 
 // Normalize tags - filter out invalid tags and ensure uniqueness
 function normalizeTags(tags: string[]): string[] {
