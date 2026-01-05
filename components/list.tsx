@@ -8,7 +8,7 @@ import type { Opportunity } from "@/types/opportunity"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PREDEFINED_TAGS, normalizeTags } from "@/lib/constants"
+import { PREDEFINED_TAGS, type PredefinedTag, normalizeTags } from "@/lib/constants"
 import { getFaviconUrlWithFallback } from "@/lib/favicon"
 import { FileText, Search } from "lucide-react"
 import { DeadlineBadge } from "@/components/deadline-badge"
@@ -19,7 +19,7 @@ interface OpportunitiesTableProps {
 
 export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTableProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<PredefinedTag | null>(null)
 
   // Fetch opportunities from Convex
   const opportunities = useQuery(api.opportunities.list, {
@@ -57,21 +57,25 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Search and Filters */}
-      <div className="space-y-3 sm:space-y-4">
-        <Input
-          type="search"
-          placeholder="Search opportunities, providers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-10 w-full"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        {/* Search input - primary, takes remaining width */}
+        <div className="flex-1">
+          <Input
+            type="search"
+            placeholder="Search opportunities, providers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-10 w-full"
+          />
+        </div>
 
-        <div className="flex flex-wrap gap-2">
+        {/* Filter tags - compact pill buttons aligned to the right on larger screens */}
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button
             variant={selectedCategory === null ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedCategory(null)}
-            className="text-xs cursor-pointer"
+            className="text-xs cursor-pointer rounded-md px-3"
           >
             All
           </Button>
@@ -81,7 +85,7 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
               variant={selectedCategory === category ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedCategory(category)}
-              className="text-xs cursor-pointer"
+              className="text-xs cursor-pointer rounded-md px-3"
             >
               {category}
             </Button>
