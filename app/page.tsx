@@ -46,25 +46,25 @@ export default function HomePage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             {/* Badge with count */}
-            {opportunityCount > 0 && (
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-foreground"
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ 
+                opacity: opportunityCount > 0 ? 1 : 0,
+                y: opportunityCount > 0 ? 0 : -10
+              }}
+              transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-foreground"
+            >
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="inline-flex"
               >
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                  className="inline-flex"
-                >
-                  <Badge className="w-4 h-4 text-primary" />
-                </motion.span>
-              
-                <span>{opportunityCount} active opportunities</span>
-              </motion.div>              
-            )}
+                <Badge className="w-4 h-4 text-primary" />
+              </motion.span>
+            
+              <span>{opportunityCount} active opportunities</span>
+            </motion.div>
             
             <motion.h1 
               className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light tracking-tight text-foreground leading-[0.95]"
