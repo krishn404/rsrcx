@@ -11,12 +11,223 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EditOpportunityDialog } from "./edit-dialog"
 import { DeleteConfirmDialog } from "./delete-dialog"
-import { Pencil, Copy, Archive, MoreVertical, AlertCircle, ArchiveRestore } from "lucide-react"
+import { Pencil, Copy, Archive, MoreVertical, AlertCircle, ArchiveRestore, GripVertical } from "lucide-react"
 import { getFaviconUrlWithFallback } from "@/lib/favicon"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 interface OpportunitiesManagementProps {
   onRefresh: () => void
   onStatusFilterChange?: (filter: "all" | "active" | "inactive" | "archived") => void
+}
+
+// Sortable Row Component
+function SortableRow({ 
+  opportunity, 
+  index,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onArchive,
+  onUnarchive,
+}: {
+  opportunity: any
+  index: number
+  onEdit: (opp: any) => void
+  onDelete: (opp: any) => void
+  onDuplicate: (opp: any) => void
+  onArchive: (opp: any) => void
+  onUnarchive: (opp: any) => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: opportunity._id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || undefined,
+    opacity: isDragging ? 0.6 : 1,
+    backgroundColor: isDragging ? 'var(--muted)' : undefined,
+  }
+
+  return (
+    <motion.tr
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: isDragging ? 0.8 : 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2, delay: index * 0.03 }}
+      className={`border-b border-border hover:bg-muted/20 transition-all duration-200 ${isDragging ? 'z-50 shadow-lg' : ''}`}
+    >
+      <td className="px-4 py-3">
+        <div
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors touch-none select-none"
+          style={{ touchAction: 'none' }}
+        >
+          <GripVertical className="w-5 h-5" />
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border/50">
+          {opportunity.logoUrl ? (
+            <Image
+              src={opportunity.logoUrl}
+              alt={opportunity.provider}
+              width={40}
+              height={40}
+              className="w-full h-full object-cover"
+              onError={async (e) => {
+                const fallback = await getFaviconUrlWithFallback(opportunity.applyUrl)
+                e.currentTarget.src = fallback
+              }}
+            />
+          ) : (
+            <span className="text-xs font-semibold text-muted-foreground">−</span>
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="space-y-1">
+          <p className="font-medium text-foreground text-sm">{opportunity.title}</p>
+          <p className="text-xs text-muted-foreground">{opportunity.provider}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1">{opportunity.description}</p>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+        {opportunity.deadline ? new Date(opportunity.deadline).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }) : "—"}
+      </td>
+      <td className="px-4 py-3">
+        <Badge
+          variant={
+            opportunity.status === "active"
+              ? "default"
+              : opportunity.status === "archived"
+                ? "secondary"
+                : "outline"
+          }
+          className="text-xs"
+        >
+          {opportunity.status}
+        </Badge>
+      </td>
+      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+        {opportunity.verifiedAt
+          ? new Date(opportunity.verifiedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })
+          : "−"}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          {opportunity.archivedAt ? (
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onUnarchive(opportunity)
+                }}
+                className="text-xs gap-1 cursor-pointer text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-200 hover:bg-green-100 dark:hover:bg-green-900/40"
+                title="Unarchive"
+              >
+                <ArchiveRestore className="w-3.5 h-3.5" />
+              </Button>
+            </motion.div>
+          ) : (
+            <>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit(opportunity)
+                  }}
+                  className="text-xs gap-1 cursor-pointer"
+                  title="Edit"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDuplicate(opportunity)
+                  }}
+                  className="text-xs gap-1 cursor-pointer"
+                  title="Duplicate"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onArchive(opportunity)
+                  }}
+                  className="text-xs gap-1 cursor-pointer"
+                  title="Archive"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                </Button>
+              </motion.div>
+            </>
+          )}
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(opportunity)
+              }}
+              className="text-xs gap-1 text-destructive hover:text-destructive-foreground hover:bg-destructive/20 dark:hover:bg-destructive/30 cursor-pointer"
+              title="Delete"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </Button>
+          </motion.div>
+        </div>
+      </td>
+    </motion.tr>
+  )
 }
 
 export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: OpportunitiesManagementProps) {
@@ -44,6 +255,19 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
   const duplicateMutation = useMutation(api.opportunities.duplicate)
   const archiveMutation = useMutation(api.opportunities.archive)
   const unarchiveMutation = useMutation(api.opportunities.unarchive)
+  const reorderMutation = useMutation(api.opportunities.reorder)
+
+  // Drag and drop sensors - with activation distance to prevent accidental drags
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   const handleDuplicate = async (opportunity: any) => {
     if (!user) {
@@ -99,6 +323,42 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
     }
   }
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id || !opportunities || !user) return
+
+    const oldIndex = opportunities.findIndex((opp) => opp._id === active.id)
+    const newIndex = opportunities.findIndex((opp) => opp._id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    if (oldIndex !== newIndex) {
+      const reorderedItems = arrayMove(opportunities, oldIndex, newIndex)
+      
+      // Update sortOrder for all items - start from 0
+      const itemsToUpdate = reorderedItems.map((opp, index) => ({
+        id: opp._id,
+        sortOrder: index,
+      }))
+
+      try {
+        await reorderMutation({
+          items: itemsToUpdate,
+          adminId: user.username,
+          adminEmail: user.username,
+        })
+        // Don't call onRefresh immediately - let Convex handle the update
+        // The query will automatically refetch with new sortOrder
+      } catch (err) {
+        console.error("Reorder error:", err)
+        setError("Failed to reorder opportunities")
+        // Refresh to get back to original state
+        onRefresh()
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Error Display */}
@@ -111,7 +371,7 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
             transition={{ duration: 0.2 }}
             className="bg-destructive/10 border border-destructive/20 rounded-md p-4 flex gap-3"
           >
-            <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm text-destructive font-medium">{error}</p>
             </div>
@@ -170,178 +430,56 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
       {/* Management Table */}
       <div className="border border-border rounded-lg overflow-hidden bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 hover:bg-muted/50 transition-colors">
-                <th className="text-left px-4 py-3 font-semibold text-foreground w-12">Logo</th>
-                <th className="text-left px-4 py-3 font-semibold text-foreground flex-1 min-w-64">Details</th>
-                <th className="text-left px-4 py-3 font-semibold text-foreground w-32">Deadline</th>
-                <th className="text-left px-4 py-3 font-semibold text-foreground w-20">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-foreground w-28">Verified</th>
-                <th className="text-right px-4 py-3 font-semibold text-foreground w-40">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {!opportunities ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <div className="space-y-2">
-                      <p className="text-muted-foreground">Loading opportunities...</p>
-                    </div>
-                  </td>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40 hover:bg-muted/50 transition-colors">
+                  <th className="text-left px-4 py-3 font-semibold text-foreground w-12"></th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground w-12">Logo</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground flex-1 min-w-64">Details</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground w-32">Deadline</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground w-20">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground w-28">Verified</th>
+                  <th className="text-right px-4 py-3 font-semibold text-foreground w-40">Actions</th>
                 </tr>
-              ) : opportunities.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                    <div className="space-y-2">
-                      <p>No opportunities found</p>
-                      <p className="text-xs">Try adjusting your search or filters</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <AnimatePresence mode="popLayout">
-                  {opportunities.map((opportunity, index) => (
-                    <motion.tr
-                      key={opportunity._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2, delay: index * 0.03 }}
-                      className="border-b border-border hover:bg-muted/20 transition-all duration-200 cursor-pointer"
-                      whileHover={{ backgroundColor: "rgba(var(--muted), 0.2)", x: 2 }}
-                    >
-                    <td className="px-4 py-3">
-                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
-                        {opportunity.logoUrl ? (
-                          <Image
-                            src={opportunity.logoUrl}
-                            alt={opportunity.provider}
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover"
-                            onError={async (e) => {
-                              // Fallback to generated placeholder favicon
-                              const fallback = await getFaviconUrlWithFallback(opportunity.applyUrl)
-                              e.currentTarget.src = fallback
-                            }}
-                          />
-                        ) : (
-                          <span className="text-xs font-semibold text-muted-foreground">−</span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <div className="space-y-1">
-                        <p className="font-medium text-foreground text-sm">{opportunity.title}</p>
-                        <p className="text-xs text-muted-foreground">{opportunity.provider}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{opportunity.description}</p>
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(opportunity.deadline).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant={
-                          opportunity.status === "active"
-                            ? "default"
-                            : opportunity.status === "archived"
-                              ? "secondary"
-                              : "outline"
-                        }
-                        className="text-xs capitalize"
-                      >
-                        {opportunity.status}
-                      </Badge>
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {opportunity.verifiedAt
-                        ? new Date(opportunity.verifiedAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : "−"}
-                    </td>
-
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {opportunity.archivedAt ? (
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleUnarchive(opportunity)}
-                              className="text-xs gap-1 cursor-pointer text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-200 hover:bg-green-100 dark:hover:bg-green-900/40"
-                              title="Unarchive"
-                            >
-                              <ArchiveRestore className="w-3.5 h-3.5" />
-                            </Button>
-                          </motion.div>
-                        ) : (
-                          <>
-                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingOpportunity(opportunity)}
-                                className="text-xs gap-1 cursor-pointer"
-                                title="Edit"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
-                            </motion.div>
-                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDuplicate(opportunity)}
-                                className="text-xs gap-1 cursor-pointer"
-                                title="Duplicate"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </Button>
-                            </motion.div>
-                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleArchive(opportunity)}
-                                className="text-xs gap-1 cursor-pointer"
-                                title="Archive"
-                              >
-                                <Archive className="w-3.5 h-3.5" />
-                              </Button>
-                            </motion.div>
-                          </>
-                        )}
-                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleteTarget(opportunity)}
-                            className="text-xs gap-1 text-destructive hover:text-destructive-foreground hover:bg-destructive/20 dark:hover:bg-destructive/30 cursor-pointer"
-                            title="Delete"
-                          >
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </Button>
-                        </motion.div>
-                      </div>
-                    </td>
-                  </motion.tr>
-                  ))}
-                </AnimatePresence>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <SortableContext items={opportunities?.map((opp) => opp._id) || []} strategy={rectSortingStrategy}>
+                  {!opportunities ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center">
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground">Loading opportunities...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : opportunities.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                        <div className="space-y-2">
+                          <p>No opportunities found</p>
+                          <p className="text-xs">Try adjusting your search or filters</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    opportunities.map((opportunity, index) => (
+                      <SortableRow
+                        key={opportunity._id}
+                        opportunity={opportunity}
+                        index={index}
+                        onEdit={setEditingOpportunity}
+                        onDelete={setDeleteTarget}
+                        onDuplicate={handleDuplicate}
+                        onArchive={handleArchive}
+                        onUnarchive={handleUnarchive}
+                      />
+                    ))
+                  )}
+                </SortableContext>
+              </tbody>
+            </table>
+          </DndContext>
         </div>
       </div>
 

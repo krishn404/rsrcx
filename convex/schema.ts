@@ -22,6 +22,7 @@ export default defineSchema({
     createdBy: v.string(),
     archivedAt: v.optional(v.number()),
     archivedBy: v.optional(v.string()),
+    sortOrder: v.optional(v.number()), // For manual ordering
   })
     .index("by_status", ["status"])
     .index("by_created", ["createdAt"])

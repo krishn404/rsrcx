@@ -47,8 +47,16 @@ export const list = query({
       )
     }
 
-    // Sort by deadline (nearest first), null deadlines go to the end
+    // Sort by sortOrder first (if exists), then by deadline (nearest first), null deadlines go to the end
     opportunities.sort((a, b) => {
+      // First, sort by sortOrder if both have it
+      if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+        return a.sortOrder - b.sortOrder
+      }
+      // If only one has sortOrder, it comes first
+      if (a.sortOrder !== undefined) return -1
+      if (b.sortOrder !== undefined) return 1
+      // Otherwise, sort by deadline
       if (!a.deadline && !b.deadline) return 0
       if (!a.deadline) return 1 // a goes to end
       if (!b.deadline) return -1 // b goes to end
@@ -75,6 +83,7 @@ export const list = query({
       verifiedAt: opp.verifiedAt,
       archivedAt: opp.archivedAt,
       createdBy: opp.createdBy,
+      sortOrder: opp.sortOrder,
     }))
   },
 })
@@ -372,5 +381,41 @@ export const hardDelete = mutation({
     // Permanently delete the opportunity
     await ctx.db.delete(args.id)
     return args.id
+  },
+})
+
+// Reorder opportunities
+export const reorder = mutation({
+  args: {
+    items: v.array(
+      v.object({
+        id: v.id("opportunities"),
+        sortOrder: v.number(),
+      })
+    ),
+    adminId: v.string(),
+    adminEmail: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Update sortOrder for all items
+    for (const item of args.items) {
+      await ctx.db.patch(item.id, {
+        sortOrder: item.sortOrder,
+        updatedAt: Date.now(),
+      })
+    }
+
+    // Log the action
+    await ctx.db.insert("auditLog", {
+      adminId: args.adminId,
+      adminEmail: args.adminEmail || args.adminId,
+      action: "reordered",
+      resourceType: "opportunity",
+      resourceId: "multiple",
+      changes: { reorderedItems: args.items.length },
+      timestamp: Date.now(),
+    })
+
+    return args.items.length
   },
 })
