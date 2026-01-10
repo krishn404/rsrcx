@@ -80,7 +80,7 @@ export function DeadlineBadge({ deadline, className }: DeadlineBadgeProps) {
     >
       <Badge
         className={cn(
-          "text-xs font-medium transition-colors border-transparent flex items-center gap-1.5",
+          "text-xs font-medium transition-colors border-transparent flex items-center gap-1.5 h-6",
           // Use light background for better contrast
           badgeState.bgColorLight,
           badgeState.textColor,

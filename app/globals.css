@@ -25,6 +25,7 @@
   --input: hsl(214.3 31.8% 91.4%);
   --ring: hsl(222.2 84% 4.9%);
   --radius: 0.5rem;
+  --badge-radius: 0.5rem; /* Shared radius for badges, deadline badges, and apply buttons */
   --sidebar: hsl(0 0% 98%);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

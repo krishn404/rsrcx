@@ -208,12 +208,12 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                     <td className="px-4 sm:px-6 py-4">
                       <div className="flex flex-wrap gap-1.5">
                         {normalizeTags(opportunity.categoryTags || []).slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs font-medium rounded-full px-2.5 py-0.5">
+                          <Badge key={tag} variant="secondary">
                             {tag}
                           </Badge>
                         ))}
                         {normalizeTags(opportunity.categoryTags || []).length > 2 && (
-                          <Badge variant="outline" className="text-xs font-medium rounded-full px-2.5 py-0.5">
+                          <Badge variant="outline">
                             +{normalizeTags(opportunity.categoryTags || []).length - 2}
                           </Badge>
                         )}
@@ -236,14 +236,14 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                     <td className="px-4 sm:px-6 py-4 text-right">
                       <Button
                         size="sm"
-                        className="text-xs cursor-pointer rounded-full px-4 h-8 font-medium group/btn"
+                        className="text-xs font-medium group/btn"
                         onClick={(e) => {
                           e.stopPropagation()
                           window.open(opportunity.applyUrl, "_blank")
                         }}
                       >
                         Apply
-                        <ArrowUpRight className="w-3 h-3 ml-1.5 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                        <ArrowUpRight className="w-3 h-3 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                       </Button>
                     </td>
                   </motion.tr>
@@ -319,12 +319,12 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">{opportunity.description}</p>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {normalizeTags(opportunity.categoryTags || []).slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs font-medium rounded-full px-2.5 py-0.5">
+                        <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>
                       ))}
                       {normalizeTags(opportunity.categoryTags || []).length > 3 && (
-                        <Badge variant="outline" className="text-xs font-medium rounded-full px-2.5 py-0.5">
+                        <Badge variant="outline">
                           +{normalizeTags(opportunity.categoryTags || []).length - 3}
                         </Badge>
                       )}
@@ -344,14 +344,14 @@ export function OpportunitiesTable({ onSelectOpportunity }: OpportunitiesTablePr
                       </div>
                       <Button
                         size="sm"
-                        className="text-xs cursor-pointer rounded-full px-4 h-8 font-medium group/btn"
+                        className="text-xs font-medium group/btn"
                         onClick={(e) => {
                           e.stopPropagation()
                           window.open(opportunity.applyUrl, "_blank")
                         }}
                       >
                         Apply
-                        <ArrowUpRight className="w-3 h-3 ml-1.5 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                        <ArrowUpRight className="w-3 h-3 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                       </Button>
                     </div>
                   </div>
