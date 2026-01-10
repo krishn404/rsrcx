@@ -30,7 +30,7 @@ const siteDescription =
   "Discover active, time-sensitive opportunities for tech students and developers. Find startup programs, grants, funding, hackathons, and application-based opportunities with deadlines - all in one place."
 
 // OG image (RENAMED + CACHE-SAFE)
-const ogImageUrl = `${siteUrl}/og-img.jpg`
+const ogImageUrl = `${siteUrl}/og-img-v3.jpg`
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
