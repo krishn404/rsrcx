@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { ArrowDown, Circle } from "lucide-react"
+import { ArrowDown, Badge } from "lucide-react"
 import { OpportunitiesTable } from "@/components/list"
 import { OpportunityModal } from "@/components/modal"
 import { SubmitOpportunityModal } from "@/components/submit"
@@ -55,7 +55,12 @@ export default function HomePage() {
               transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-foreground"
             >
-              <Circle className="w-2 h-2 fill-primary text-primary" />
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Badge className="w-4 h-4 text-primary" />
+              </motion.span>
             
               <span>{opportunityCount} active opportunities</span>
             </motion.div>

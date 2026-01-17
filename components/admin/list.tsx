@@ -21,6 +21,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core"
 import {
   arrayMove,
@@ -67,8 +69,7 @@ function SortableRow({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: transition || undefined,
-    opacity: isDragging ? 0.6 : 1,
-    backgroundColor: isDragging ? 'var(--muted)' : undefined,
+    opacity: isDragging ? 0.3 : 1,
   }
 
   return (
@@ -245,6 +246,7 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
   const [editingOpportunity, setEditingOpportunity] = useState<any>(null)
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const opportunities = useQuery(api.opportunities.list, {
     status: statusFilter,
@@ -323,8 +325,13 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
     }
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
+    setActiveId(null)
 
     if (!over || active.id === over.id || !opportunities || !user) return
 
@@ -430,7 +437,12 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
       {/* Management Table */}
       <div className="border border-border rounded-lg overflow-hidden bg-card">
         <div className="overflow-x-auto">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter} 
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40 hover:bg-muted/50 transition-colors">
@@ -479,6 +491,96 @@ export function OpportunitiesManagement({ onRefresh, onStatusFilterChange }: Opp
                 </SortableContext>
               </tbody>
             </table>
+            <DragOverlay>
+              {activeId && opportunities ? (() => {
+                const activeOpportunity = opportunities.find(opp => opp._id === activeId)
+                if (!activeOpportunity) return null
+                
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, rotate: -2 }}
+                    animate={{ opacity: 1, scale: 1.02, rotate: 2 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-sm bg-card border-2 border-primary shadow-2xl rounded-lg overflow-hidden cursor-grabbing"
+                    style={{ 
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+                      width: '600px',
+                      maxWidth: '90vw',
+                    }}
+                  >
+                    <table className="w-full">
+                      <tbody>
+                        <tr className="bg-muted/30">
+                          <td className="px-4 py-3 w-12">
+                            <GripVertical className="w-5 h-5 text-primary" />
+                          </td>
+                          <td className="px-4 py-3 w-12">
+                            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border/50">
+                              {activeOpportunity.logoUrl ? (
+                                <Image
+                                  src={activeOpportunity.logoUrl}
+                                  alt={activeOpportunity.provider}
+                                  width={40}
+                                  height={40}
+                                  className="w-full h-full object-cover"
+                                  onError={async (e) => {
+                                    const fallback = await getFaviconUrlWithFallback(activeOpportunity.applyUrl)
+                                    e.currentTarget.src = fallback
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-xs font-semibold text-muted-foreground">−</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              <p className="font-medium text-foreground text-sm">{activeOpportunity.title}</p>
+                              <p className="text-xs text-muted-foreground">{activeOpportunity.provider}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-1">{activeOpportunity.description}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {activeOpportunity.deadline ? new Date(activeOpportunity.deadline).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }) : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge
+                              variant={
+                                activeOpportunity.status === "active"
+                                  ? "default"
+                                  : activeOpportunity.status === "archived"
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {activeOpportunity.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {activeOpportunity.verifiedAt
+                              ? new Date(activeOpportunity.verifiedAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })
+                              : "−"}
+                          </td>
+                          <td className="px-4 py-3 text-right w-40">
+                            <div className="flex items-center justify-end gap-1">
+                              <GripVertical className="w-3.5 h-3.5 text-primary/50" />
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </motion.div>
+                )
+              })() : null}
+            </DragOverlay>
           </DndContext>
         </div>
       </div>
